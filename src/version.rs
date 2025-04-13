@@ -8,7 +8,7 @@ use std::process::Command;
 use dirs;
 
 const VERSION_CHECK_URL: &str = "https://re.juliaklee.wtf/goa-cli/version";
-const VERSION_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60); 
+const VERSION_CHECK_INTERVAL: Duration = Duration::from_secs(1 * 60 * 60); 
 
 #[derive(Debug, Serialize, Deserialize)]
 struct VersionResponse {
@@ -34,19 +34,15 @@ fn get_cache_path() -> PathBuf {
 }
 
 pub fn check_version() -> Result<()> {
-    let current_version = format!("v{}", get_current_version());
     let cache_path = get_cache_path();
     
-    // Check if we need to fetch the latest version
     let latest_version = if should_check_for_updates(&cache_path)? {
-        // Fetch latest version from server
         let client = reqwest::blocking::Client::new();
         let response = client.get(VERSION_CHECK_URL).send()?;
         
         if response.status().is_success() {
             let version_info: VersionResponse = response.json()?;
             
-            // Update cache
             let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs();
             let cache = VersionCache {
                 last_checked: now,
@@ -58,22 +54,19 @@ pub fn check_version() -> Result<()> {
             
             version_info.version
         } else {
-            // Use current version if request fails
-            current_version.clone()
+            format!("v{}", get_current_version())
         }
     } else {
-        // Use cached version
         let cache_data = fs::read_to_string(&cache_path)?;
         let cache: VersionCache = serde_json::from_str(&cache_data)?;
         cache.latest_version
     };
     
-    // Compare versions
-    if latest_version != current_version {
+    if latest_version != format!("v{}", get_current_version()) {
         println!();
         println!("{} {} → {}", 
             "A new version of GOA CLI is available:".yellow(),
-            current_version.bright_red(),
+            format!("v{}", get_current_version()).bright_red(),
             latest_version.bright_green()
         );
         println!("Run {} to upgrade.", "`goa self update`".cyan());
@@ -84,7 +77,6 @@ pub fn check_version() -> Result<()> {
 }
 
 fn should_check_for_updates(cache_path: &PathBuf) -> Result<bool> {
-    // If cache file doesn't exist, we should check
     if !cache_path.exists() {
         return Ok(true);
     }
@@ -103,23 +95,43 @@ fn should_check_for_updates(cache_path: &PathBuf) -> Result<bool> {
 }
 
 pub fn handle_self_update() -> Result<()> {
-    println!("Starting GOA CLI self-update...");
+    println!("Checking for updates...");
+    
+    let current_version = format!("v{}", get_current_version());
+    
+    let client = reqwest::blocking::Client::new();
+    let response = client.get(VERSION_CHECK_URL).send()?;
+    
+    if !response.status().is_success() {
+        return Err(anyhow::anyhow!("Failed to check for updates"));
+    }
+    
+    let version_info: VersionResponse = response.json()?;
+    let latest_version = version_info.version;
+    
+    if latest_version == current_version {
+        println!("You already have the latest version ({}).", current_version);
+        return Ok(());
+    }
+    
+    println!("{} {} → {}", 
+        "Updating GOA CLI:".yellow(),
+        current_version.bright_red(),
+        latest_version.bright_green()
+    );
     
     #[cfg(target_os = "windows")]
     {
-        
         println!("Downloading Windows installer...");
         
         let temp_dir = std::env::temp_dir();
         let installer_path = temp_dir.join("goa_install.ps1");
-        
         
         let installer_url = "https://raw.githubusercontent.com/kleeedolinux/goa-cli/master/scripts/install.ps1";
         let installer_content = reqwest::blocking::get(installer_url)?.text()?;
         fs::write(&installer_path, installer_content)?;
         
         println!("Running installer...");
-        
         
         let ps_status = Command::new("powershell")
             .arg("-ExecutionPolicy")
@@ -132,15 +144,12 @@ pub fn handle_self_update() -> Result<()> {
             return Err(anyhow::anyhow!("Failed to run the installer"));
         }
         
-        
         fs::remove_file(installer_path).ok();
     }
     
     #[cfg(target_os = "macos")]
     {
-        
         println!("Downloading macOS installer...");
-        
         
         let status = Command::new("bash")
             .arg("-c")
@@ -154,9 +163,7 @@ pub fn handle_self_update() -> Result<()> {
     
     #[cfg(target_os = "linux")]
     {
-        
         println!("Downloading Linux installer...");
-        
         
         let status = Command::new("bash")
             .arg("-c")
@@ -175,4 +182,34 @@ pub fn handle_self_update() -> Result<()> {
     
     println!("Self-update completed successfully!");
     Ok(())
+}
+
+pub fn get_latest_version() -> Result<String> {
+    let cache_path = get_cache_path();
+    
+    if !cache_path.exists() || should_check_for_updates(&cache_path)? {
+        let client = reqwest::blocking::Client::new();
+        let response = client.get(VERSION_CHECK_URL).send()?;
+        
+        if response.status().is_success() {
+            let version_info: VersionResponse = response.json()?;
+            
+            let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs();
+            let cache = VersionCache {
+                last_checked: now,
+                latest_version: version_info.version.clone(),
+            };
+            
+            let cache_json = serde_json::to_string(&cache)?;
+            fs::write(&cache_path, cache_json)?;
+            
+            Ok(version_info.version)
+        } else {
+            Ok(format!("v{}", get_current_version()))
+        }
+    } else {
+        let cache_data = fs::read_to_string(&cache_path)?;
+        let cache: VersionCache = serde_json::from_str(&cache_data)?;
+        Ok(cache.latest_version)
+    }
 } 

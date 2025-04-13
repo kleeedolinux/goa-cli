@@ -11,10 +11,13 @@ mod utils;
 mod version;
 
 #[derive(Parser)]
-#[clap(name = "goa", about = "Go on Airplanes CLI - Developer-focused tooling for the Go on Airplanes framework", version)]
+#[clap(name = "goa", about = "Go on Airplanes CLI - Developer-focused tooling for the Go on Airplanes framework", version, disable_version_flag = true)]
 struct Cli {
     #[clap(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
+
+    #[clap(long = "version", short = 'v', help = "Print version information", global = true)]
+    version_flag: bool,
 }
 
 #[derive(Subcommand)]
@@ -54,8 +57,14 @@ enum SelfCommands {
 }
 
 fn main() -> Result<()> {
-    print_banner();
+    let cli = Cli::parse();
     
+    if cli.version_flag {
+        print_version_info();
+        return Ok(());
+    }
+    
+    print_banner();
     
     let _ = version::check_version();
     
@@ -63,23 +72,27 @@ fn main() -> Result<()> {
         return Ok(());
     }
     
-    let cli = Cli::parse();
-    
     match cli.command {
-        Commands::Project { command } => {
-            commands::project::handle_project_command(command)
+        Some(command) => match command {
+            Commands::Project { command } => {
+                commands::project::handle_project_command(command)
+            },
+            Commands::Route { command } => {
+                commands::route::handle_route_command(command)
+            },
+            Commands::Component { command } => {
+                commands::component::handle_component_command(command)
+            },
+            Commands::SelfCmd { command } => {
+                match command {
+                    SelfCommands::Update => version::handle_self_update(),
+                }
+            },
         },
-        Commands::Route { command } => {
-            commands::route::handle_route_command(command)
-        },
-        Commands::Component { command } => {
-            commands::component::handle_component_command(command)
-        },
-        Commands::SelfCmd { command } => {
-            match command {
-                SelfCommands::Update => version::handle_self_update(),
-            }
-        },
+        None => {
+            print_version_info();
+            Ok(())
+        }
     }
 }
 
@@ -248,6 +261,25 @@ fn install_go() -> Result<bool> {
     Ok(false)
 }
 
+fn print_version_info() {
+    let current_version = version::get_current_version();
+    println!("GOA CLI v{}", current_version);
+    
+    match version::get_latest_version() {
+        Ok(latest_version) => {
+            if latest_version != format!("v{}", current_version) {
+                println!("Latest version: {}", latest_version.bright_green());
+                println!("Run {} to upgrade.", "`goa self update`".cyan());
+            } else {
+                println!("You are using the latest version.");
+            }
+        },
+        Err(_) => {
+            println!("Could not check for updates.");
+        }
+    }
+}
+
 fn print_banner() {
     let banner = r#"
    ██████╗  ██████╗      ██████╗ ███╗   ██╗     █████╗ ██╗██████╗ ██████╗ ██╗      █████╗ ███╗   ██╗███████╗███████╗
@@ -259,6 +291,6 @@ fn print_banner() {
     "#;
     
     println!("{}", banner.cyan());
-    println!("{}", "Go on Airplanes CLI - Fly high with simple web development".bright_blue());
+    println!("{} v{}", "Go on Airplanes CLI - Fly high with simple web development".bright_blue(), version::get_current_version().bright_yellow());
     println!();
 }
