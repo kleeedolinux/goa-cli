@@ -106,10 +106,29 @@ if (-not (Test-Path $tempFile) -or (Get-Item $tempFile).Length -eq 0) {
     exit 1
 }
 
-# Move to installation directory
+# Install to the destination directory
 Write-Host "Installing GOA CLI to $binPath..." -ForegroundColor Yellow
 try {
-    Move-Item -Path $tempFile -Destination $binPath -Force
+    # If the file exists, try to stop any running processes that might be using it
+    if (Test-Path $binPath) {
+        # Try to find and stop any process that might be using the file
+        $processName = [System.IO.Path]::GetFileNameWithoutExtension($binPath)
+        $runningProcesses = Get-Process -Name $processName -ErrorAction SilentlyContinue
+        if ($runningProcesses) {
+            Write-Host "Stopping running instances of GOA CLI..." -ForegroundColor Yellow
+            $runningProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
+            # Give it a moment to release the file
+            Start-Sleep -Seconds 1
+        }
+        
+        # Try to remove the existing file
+        Remove-Item -Path $binPath -Force -ErrorAction SilentlyContinue
+    }
+    
+    # Copy the file instead of moving it
+    Copy-Item -Path $tempFile -Destination $binPath -Force
+    # Clean up the temporary file after successful copy
+    Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
 }
 catch {
     Write-Host "Error: Failed to install the GOA CLI binary." -ForegroundColor Red
