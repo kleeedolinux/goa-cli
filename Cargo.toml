@@ -1,0 +1,38 @@
+[package]
+name = "goa"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool for Go on Airplanes - a Go-based fullstack framework"
+authors = ["kleeedolinux"]
+license = "MIT"
+repository = "https://github.com/kleeedolinux/goa-cli"
+readme = "README.md"
+
+[[bin]]
+name = "goa"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+dialoguer = "0.11"
+console = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+colored = "2.0"
+fs_extra = "1.3"
+regex = "1.9"
+indicatif = "0.17"
+walkdir = "2.4"
+dirs = "5.0"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["wincon", "fileapi"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"
