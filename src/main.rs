@@ -8,6 +8,7 @@ mod config;
 mod errors;
 mod templates;
 mod utils;
+mod version;
 
 #[derive(Parser)]
 #[clap(name = "goa", about = "Go on Airplanes CLI - Developer-focused tooling for the Go on Airplanes framework", version)]
@@ -38,11 +39,25 @@ enum Commands {
         #[clap(subcommand)]
         command: commands::component::ComponentCommands,
     },
+    
+    #[clap(name = "self", about = "Update the CLI to the latest version")]
+    SelfCmd {
+        #[clap(subcommand)]
+        command: SelfCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum SelfCommands {
+    #[clap(about = "Update the CLI to the latest version")]
+    Update,
 }
 
 fn main() -> Result<()> {
     print_banner();
     
+    // Check for updates silently (don't show errors)
+    let _ = version::check_version();
     
     if !verify_requirements()? {
         return Ok(());
@@ -59,6 +74,11 @@ fn main() -> Result<()> {
         },
         Commands::Component { command } => {
             commands::component::handle_component_command(command)
+        },
+        Commands::SelfCmd { command } => {
+            match command {
+                SelfCommands::Update => version::handle_self_update(),
+            }
         },
     }
 }

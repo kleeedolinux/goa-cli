@@ -42,6 +42,23 @@ if [[ "$OS" == "Linux" ]]; then
     
     # Define installation directory
     INSTALL_DIR="/usr/local/bin"
+    BINARY_PATH="$INSTALL_DIR/goa"
+    
+    # Check if GOA CLI is already installed
+    IS_UPDATE=0
+    if [ -f "$BINARY_PATH" ]; then
+        IS_UPDATE=1
+        echo "GOA CLI is already installed."
+        read -p "Do you want to update it? (y/n): " confirm_update
+        
+        if [[ $confirm_update != "y" && $confirm_update != "Y" ]]; then
+            echo "Update cancelled. Exiting..."
+            exit 0
+        fi
+        
+        echo "Updating GOA CLI..."
+    fi
+    
     if [ ! -d "$INSTALL_DIR" ]; then
         echo "Creating installation directory..."
         sudo mkdir -p "$INSTALL_DIR"
@@ -111,8 +128,8 @@ if [[ "$OS" == "Linux" ]]; then
     chmod +x "$TMP_FILE"
 
     # Move to installation directory
-    echo "Installing GOA CLI to $INSTALL_DIR/goa..."
-    sudo mv "$TMP_FILE" "$INSTALL_DIR/goa"
+    echo "Installing GOA CLI to $BINARY_PATH..."
+    sudo mv "$TMP_FILE" "$BINARY_PATH"
 
     if [ $? -ne 0 ]; then
         echo "Error: Failed to install the GOA CLI binary. Do you have permission to write to $INSTALL_DIR?"
@@ -120,7 +137,11 @@ if [[ "$OS" == "Linux" ]]; then
     fi
 
     echo
-    echo "GOA CLI has been successfully installed!"
+    if [ $IS_UPDATE -eq 1 ]; then
+        echo "GOA CLI has been successfully updated!"
+    else
+        echo "GOA CLI has been successfully installed!"
+    fi
     echo "You can now use the 'goa' command from your terminal."
     echo "For help, run: goa --help"
     echo

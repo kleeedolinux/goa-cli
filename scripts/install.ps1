@@ -9,6 +9,18 @@ Write-Host
 $installDir = Join-Path $env:APPDATA "GoaCliTool"
 $binPath = Join-Path $installDir "goa.exe"
 
+# Check if GOA CLI is already installed
+$isUpdate = $false
+if (Test-Path $binPath) {
+    $isUpdate = $true
+    $confirmUpdate = Read-Host "GOA CLI is already installed. Do you want to update it? (y/n)"
+    if ($confirmUpdate -ne "y" -and $confirmUpdate -ne "Y") {
+        Write-Host "Update cancelled. Exiting..." -ForegroundColor Yellow
+        exit 0
+    }
+    Write-Host "Updating GOA CLI..." -ForegroundColor Yellow
+}
+
 # Create installation directory if it doesn't exist
 if (-not (Test-Path $installDir)) {
     Write-Host "Creating installation directory..." -ForegroundColor Yellow
@@ -116,7 +128,11 @@ if ($userPath -notlike "*$installDir*") {
 }
 
 Write-Host
-Write-Host "GOA CLI has been successfully installed!" -ForegroundColor Green
+if ($isUpdate) {
+    Write-Host "GOA CLI has been successfully updated!" -ForegroundColor Green
+} else {
+    Write-Host "GOA CLI has been successfully installed!" -ForegroundColor Green
+}
 Write-Host "You can now use the 'goa' command from your terminal." -ForegroundColor Green
 Write-Host "For help, run: goa --help" -ForegroundColor Green
 Write-Host

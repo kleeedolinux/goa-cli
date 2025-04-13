@@ -8,6 +8,25 @@ echo "GOA CLI Setup for macOS"
 echo "======================="
 echo
 
+# Define installation directory
+INSTALL_DIR="/usr/local/bin"
+BINARY_PATH="$INSTALL_DIR/goa"
+
+# Check if GOA CLI is already installed
+IS_UPDATE=0
+if [ -f "$BINARY_PATH" ]; then
+    IS_UPDATE=1
+    echo "GOA CLI is already installed."
+    read -p "Do you want to update it? (y/n): " confirm_update
+    
+    if [[ $confirm_update != "y" && $confirm_update != "Y" ]]; then
+        echo "Update cancelled. Exiting..."
+        exit 0
+    fi
+    
+    echo "Updating GOA CLI..."
+fi
+
 # Check if git is installed
 if ! command -v git &> /dev/null; then
     echo "Error: git is required but not installed. Please install git and try again."
@@ -70,16 +89,15 @@ if [ $? -ne 0 ]; then
 fi
 
 # Define installation directory
-INSTALL_DIR="/usr/local/bin"
 if [ ! -d "$INSTALL_DIR" ]; then
     echo "Creating installation directory..."
     sudo mkdir -p "$INSTALL_DIR"
 fi
 
 # Copy the built binary
-echo "Installing GOA CLI to $INSTALL_DIR/goa..."
-sudo cp "./target/release/goa" "$INSTALL_DIR/goa"
-sudo chmod +x "$INSTALL_DIR/goa"
+echo "Installing GOA CLI to $BINARY_PATH..."
+sudo cp "./target/release/goa" "$BINARY_PATH"
+sudo chmod +x "$BINARY_PATH"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to install the GOA CLI binary. Do you have permission to write to $INSTALL_DIR?"
@@ -94,7 +112,11 @@ cd -
 rm -rf "$TEMP_DIR"
 
 echo
-echo "GOA CLI has been successfully built and installed!"
+if [ $IS_UPDATE -eq 1 ]; then
+    echo "GOA CLI has been successfully updated!"
+else
+    echo "GOA CLI has been successfully installed!"
+fi
 echo "You can now use the 'goa' command from your terminal."
 echo "For help, run: goa --help"
 echo
