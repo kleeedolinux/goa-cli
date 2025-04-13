@@ -8,7 +8,7 @@ use std::process::Command;
 use dirs;
 
 const VERSION_CHECK_URL: &str = "https://re.juliaklee.wtf/goa-cli/version";
-const VERSION_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60); // 24 hours
+const VERSION_CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60); 
 
 #[derive(Debug, Serialize, Deserialize)]
 struct VersionResponse {
@@ -89,16 +89,16 @@ fn should_check_for_updates(cache_path: &PathBuf) -> Result<bool> {
         return Ok(true);
     }
     
-    // Read and parse cache
+    
     let cache_data = fs::read_to_string(cache_path)?;
     let cache: VersionCache = serde_json::from_str(&cache_data)?;
     
-    // Get current time
+    
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)?
         .as_secs();
     
-    // Check if the cache is older than the check interval
+    
     Ok(now - cache.last_checked > VERSION_CHECK_INTERVAL.as_secs())
 }
 
@@ -107,20 +107,20 @@ pub fn handle_self_update() -> Result<()> {
     
     #[cfg(target_os = "windows")]
     {
-        // Download and run the PowerShell installer
+        
         println!("Downloading Windows installer...");
         
         let temp_dir = std::env::temp_dir();
         let installer_path = temp_dir.join("goa_install.ps1");
         
-        // Download the installer
+        
         let installer_url = "https://raw.githubusercontent.com/kleeedolinux/goa-cli/master/scripts/install.ps1";
         let installer_content = reqwest::blocking::get(installer_url)?.text()?;
         fs::write(&installer_path, installer_content)?;
         
         println!("Running installer...");
         
-        // Run PowerShell with the installer
+        
         let ps_status = Command::new("powershell")
             .arg("-ExecutionPolicy")
             .arg("Bypass")
@@ -132,16 +132,16 @@ pub fn handle_self_update() -> Result<()> {
             return Err(anyhow::anyhow!("Failed to run the installer"));
         }
         
-        // Clean up
+        
         fs::remove_file(installer_path).ok();
     }
     
     #[cfg(target_os = "macos")]
     {
-        // Download and run the macOS installer
+        
         println!("Downloading macOS installer...");
         
-        // Use bash to download and run the installer
+        
         let status = Command::new("bash")
             .arg("-c")
             .arg("curl -sSL https://raw.githubusercontent.com/kleeedolinux/goa-cli/master/scripts/macuser.sh | bash")
@@ -154,10 +154,10 @@ pub fn handle_self_update() -> Result<()> {
     
     #[cfg(target_os = "linux")]
     {
-        // Download and run the Linux installer
+        
         println!("Downloading Linux installer...");
         
-        // Use bash to download and run the installer
+        
         let status = Command::new("bash")
             .arg("-c")
             .arg("curl -sSL https://raw.githubusercontent.com/kleeedolinux/goa-cli/master/scripts/install.sh | bash")

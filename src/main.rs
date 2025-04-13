@@ -56,7 +56,7 @@ enum SelfCommands {
 fn main() -> Result<()> {
     print_banner();
     
-    // Check for updates silently (don't show errors)
+    
     let _ = version::check_version();
     
     if !verify_requirements()? {
