@@ -14,6 +14,22 @@ The official command-line interface for [Go on Airplanes](https://github.com/kle
 
 ## Installation
 
+### Quick Install
+
+We provide easy installation scripts for all platforms that will automatically download and install GOA CLI.
+
+#### Linux/macOS
+```bash
+# Universal installer (detects OS and installs accordingly)
+curl -sSL https://raw.githubusercontent.com/kleeedolinux/goa-cli/master/scripts/install.sh | bash
+```
+
+#### Windows
+```powershell
+# Run in PowerShell
+iwr -useb https://raw.githubusercontent.com/kleeedolinux/goa-cli/master/scripts/install.ps1 | iex
+```
+
 ### From Binary Releases
 
 Download the latest binary for your platform from the [releases page](https://github.com/goonairplanes/goa-cli/releases).
