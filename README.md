@@ -1,7 +1,7 @@
 # GOA CLI
 
 The official command-line interface for [Go on Airplanes](https://github.com/kleeedolinux/goonairplanes) - a Go-based fullstack framework with HTML file-based routing.
-
+## [DOCS](https://kleeedolinux.gitbook.io/goonairplanes/start-here/welcome-to-go-on-airplanes/getting-started/goa-cli)
 ## Features
 
 - Create new Go on Airplanes projects
